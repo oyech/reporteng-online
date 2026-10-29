@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loginWithSupabase } from '@/lib/auth';
+import { loginWithSupabase, signSession } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +10,17 @@ export async function POST(req: NextRequest) {
     }
 
     const session = await loginWithSupabase(email.trim(), password);
-    return NextResponse.json({ ok: true, user: { email: session.email, id: session.userId } });
+    const res = NextResponse.json({ ok: true, user: { email: session.email, id: session.userId } });
+
+    res.cookies.set('reporteng_session', signSession(session), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60,
+    });
+
+    return res;
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || 'Terjadi kesalahan saat masuk.' },

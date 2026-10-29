@@ -40,6 +40,11 @@ export async function fetchFilteredReports(params: FetchReportsParams) {
   }
 
   const session = await getSession();
+
+  if (!isDw && !session?.token) {
+    throw new Error('Sesi login belum ditemukan atau telah berakhir. Silakan login dengan akun Engineering / SPV.');
+  }
+
   const token = isDw ? key : session?.token || key;
 
   const headers: Record<string, string> = {
@@ -100,7 +105,7 @@ export async function fetchFilteredReports(params: FetchReportsParams) {
         throw new Error(
           isDw
             ? 'Supabase DW menolak akses. Periksa DW_SUPABASE_KEY dan izin SELECT.'
-            : 'Sesi berakhir atau Supabase menolak akses. Silakan login kembali.'
+            : 'Akun Anda tidak memiliki izin untuk membaca laporan pekerjaan di tabel ini. Pastikan akun memiliki role SPV atau Admin, atau area kerja yang sesuai.'
         );
       }
       throw new Error(`Gagal memuat data dari Supabase (HTTP ${res.status}).`);

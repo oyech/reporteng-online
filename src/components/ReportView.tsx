@@ -47,16 +47,27 @@ function formatDisplayDate(isoString: string): string {
 
 export default function ReportView({ source, title, heading, description }: ReportViewProps) {
   const [dates, setDates] = useState({ start: '', end: '' });
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     const now = new Date();
-    const Y = now.getFullYear();
-    const M = String(now.getMonth() + 1).padStart(2, '0');
-    const D = String(now.getDate()).padStart(2, '0');
+    let Y = now.getFullYear();
+    let M = String(now.getMonth() + 1).padStart(2, '0');
+    let D = String(now.getDate()).padStart(2, '0');
+
+    // Data di Supabase report_eng tercatat pada tahun 2026 (September - Oktober 2026).
+    // Jika sistem browser pengguna masih tahun sebelum 2026 (misal 2024/2025), fallback ke Oktober 2026.
+    if (Y < 2026) {
+      Y = 2026;
+      M = '10';
+      D = '31';
+    }
+
     setDates({
       start: `${Y}-${M}-01`,
       end: `${Y}-${M}-${D}`,
     });
+    setInitialized(true);
   }, []);
 
   const [filterValues, setFilterValues] = useState({
@@ -105,15 +116,14 @@ export default function ReportView({ source, title, heading, description }: Repo
       setErrorNotice(null);
 
       try {
-        const params = new URLSearchParams({
-          start: dates.start,
-          end: dates.end,
-          area_kerja: filterValues.area_kerja,
-          unit_area: filterValues.unit_area,
-          status: filterValues.status,
-          pic: filterValues.pic,
-          source,
-        });
+        const params = new URLSearchParams();
+        if (dates.start) params.set('start', dates.start);
+        if (dates.end) params.set('end', dates.end);
+        if (filterValues.area_kerja) params.set('area_kerja', filterValues.area_kerja);
+        if (filterValues.unit_area) params.set('unit_area', filterValues.unit_area);
+        if (filterValues.status) params.set('status', filterValues.status);
+        if (filterValues.pic) params.set('pic', filterValues.pic);
+        params.set('source', source);
 
         const res = await fetch(`/api/${source === 'dw' ? 'dw/reports' : 'reports'}?${params.toString()}`);
         if (!res.ok) {
@@ -138,10 +148,10 @@ export default function ReportView({ source, title, heading, description }: Repo
   );
 
   useEffect(() => {
-    if (dates.start) {
+    if (initialized) {
       loadReports();
     }
-  }, [dates.start, loadReports]);
+  }, [initialized, dates.start, dates.end, loadReports]);
 
   // Auto-refresh interval (5s)
   useEffect(() => {
@@ -215,14 +225,7 @@ export default function ReportView({ source, title, heading, description }: Repo
   };
 
   const handleResetFilters = () => {
-    const now = new Date();
-    const Y = now.getFullYear();
-    const M = String(now.getMonth() + 1).padStart(2, '0');
-    const D = String(now.getDate()).padStart(2, '0');
-    setDates({
-      start: `${Y}-${M}-01`,
-      end: `${Y}-${M}-${D}`,
-    });
+    setDates({ start: '', end: '' });
     setFilterValues({ area_kerja: '', unit_area: '', status: '', pic: '' });
     setSearchQuery('');
     setPage(1);
@@ -447,7 +450,12 @@ export default function ReportView({ source, title, heading, description }: Repo
             </div>
 
             <div className="filter-bottom">
-              <span>Pilih periode atau terapkan filter untuk mempersempit daftar.</span>
+              <span id="period-caption">
+                {dates.start || dates.end
+                  ? `${dates.start || 'Awal'} → ${dates.end || 'Terbaru'} (UTC+7, tanggal akhir termasuk)`
+                  : 'Semua tanggal (tanpa batas periode)'}
+                {' • Filter aktif juga digunakan untuk export Excel'}
+              </span>
               <button className="button apply" type="submit">
                 Terapkan filter <span>→</span>
               </button>
@@ -621,7 +629,34 @@ export default function ReportView({ source, title, heading, description }: Repo
             <div className="empty">
               <div className="empty-icon">▤</div>
               <h3>Belum ada laporan</h3>
-              <p>Coba ubah periode tanggal atau filter untuk melihat pekerjaan lainnya.</p>
+              <p>
+                {dates.start || dates.end
+                  ? `Tidak ada data pekerjaan pada periode ${dates.start || 'awal'} s/d ${dates.end || 'terbaru'}.`
+                  : 'Tidak ada data pekerjaan ditemukan.'}
+                {source === 'engineering' &&
+                  ' Pastikan Anda login dengan akun SPV/Admin atau memiliki hak akses area kerja terkait di Supabase.'}
+              </p>
+              <div style={{ marginTop: '16px', display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="button"
+                  style={{ fontSize: '11px', padding: '6px 14px' }}
+                  onClick={handleResetFilters}
+                >
+                  Tampilkan Semua Periode
+                </button>
+                <button
+                  type="button"
+                  className="button"
+                  style={{ fontSize: '11px', padding: '6px 14px', background: '#204f40', color: '#fff' }}
+                  onClick={() => {
+                    setDates({ start: '2026-10-01', end: '2026-10-31' });
+                    setFilterValues({ area_kerja: '', unit_area: '', status: '', pic: '' });
+                  }}
+                >
+                  Lihat Periode Aktif (Oktober 2026)
+                </button>
+              </div>
             </div>
           )}
 
