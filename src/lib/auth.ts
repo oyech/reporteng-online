@@ -66,9 +66,12 @@ export async function clearSessionCookie() {
   cookieStore.delete(SESSION_COOKIE_NAME);
 }
 
+const DEFAULT_SUPABASE_URL = 'https://dwjlkmvcttfokbfjjnfw.supabase.co';
+const DEFAULT_SUPABASE_KEY = 'sb_publishable_NhBQlpPzWLoKFwbhTNF43Q_CSGKRt99';
+
 export async function loginWithSupabase(email: string, password: string): Promise<UserSession> {
-  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
-  const supabaseKey = process.env.SUPABASE_KEY || '';
+  const supabaseUrl = (process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL).replace(/\/$/, '');
+  const supabaseKey = process.env.SUPABASE_KEY || DEFAULT_SUPABASE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Supabase URL atau Key belum dikonfigurasi di environment variable.');

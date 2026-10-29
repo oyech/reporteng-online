@@ -29,9 +29,12 @@ export interface LogsheetContext {
   personnel: string[];
 }
 
+const DEFAULT_TABLE_URL = 'https://eibnrigeisychgfwowrx.supabase.co';
+const DEFAULT_TABLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpYm5yaWdlaXN5Y2hnZndvd3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMDk1ODQsImV4cCI6MjEwMzg4NTU4NH0.IKxkxbpU4u7o7L8OrRPk7ddsXKQMRYh-qPyiE46idc0';
+
 export async function fetchLogsheetRows(page = 1, pageSize = 50): Promise<{ rows: LogsheetRow[]; total: number | null }> {
-  const url = (process.env.TABLE_SUPABASE_URL || '').replace(/\/$/, '');
-  const key = process.env.TABLE_SUPABASE_KEY || '';
+  const url = (process.env.TABLE_SUPABASE_URL || DEFAULT_TABLE_URL).replace(/\/$/, '');
+  const key = process.env.TABLE_SUPABASE_KEY || DEFAULT_TABLE_KEY;
   const table = 'logsheets';
 
   if (!url || !key) {

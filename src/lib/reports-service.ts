@@ -12,14 +12,28 @@ export interface FetchReportsParams {
   source?: 'engineering' | 'dw';
 }
 
+const DEFAULTS = {
+  engineering: {
+    url: 'https://dwjlkmvcttfokbfjjnfw.supabase.co',
+    key: 'sb_publishable_NhBQlpPzWLoKFwbhTNF43Q_CSGKRt99',
+    table: 'report_eng',
+  },
+  dw: {
+    url: 'https://hgdaqniceqhmijjyyeij.supabase.co',
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhnZGFxbmljZXFobWlqanl5ZWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyODgwMzMsImV4cCI6MjEwMjg2NDAzM30.v39UoUgDhLMRbRHaK9sSGYiRzpSljwSpksjj9vdowh8',
+    table: 'daily_reports',
+  },
+};
+
 export async function fetchFilteredReports(params: FetchReportsParams) {
   const source = params.source || 'engineering';
   const isDw = source === 'dw';
 
+  const defaultConf = isDw ? DEFAULTS.dw : DEFAULTS.engineering;
   const prefix = isDw ? 'DW_' : '';
-  const url = (process.env[`${prefix}SUPABASE_URL`] || '').replace(/\/$/, '');
-  const key = process.env[`${prefix}SUPABASE_KEY`] || '';
-  const table = process.env[`${prefix}SUPABASE_TABLE`] || (isDw ? 'daily_reports' : 'report_eng');
+  const url = (process.env[`${prefix}SUPABASE_URL`] || defaultConf.url).replace(/\/$/, '');
+  const key = process.env[`${prefix}SUPABASE_KEY`] || defaultConf.key;
+  const table = process.env[`${prefix}SUPABASE_TABLE`] || defaultConf.table;
 
   if (!url || !key || !table) {
     throw new Error(`Konfigurasi Supabase untuk ${source} belum lengkap pada .env.`);
